@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import copy
 import itertools
 
 
 class Puzzle(object):
 
     def __init__(self, lists):
-        self._lists = lists
+        self._lists = [[e for e in lst] for lst in lists]
         self.n_slot = sum(lists, []).count(None)
 
     def get_slots(self):
@@ -77,8 +76,7 @@ class Puzzle(object):
         return '\n'.join(r)
 
     def clone(self):
-        lsts = copy.deepcopy(self._lists)
-        return Puzzle(lsts)
+        return Puzzle(self._lists)
 
 
 def resolve(puzzle):
