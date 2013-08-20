@@ -1,31 +1,32 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+import copy
+import itertools
+
 
 class Puzzle(object):
 
     def __init__(self, lists):
         self._lists = lists
+        self.n_slot = sum(lists, []).count(None)
 
     def get(self, x, y):
         return self._lists[x][y]
 
-    def check(self, new=None):
-        if new is None:
+    def set(self, x, y, value):
+        assert value is None or isinstance(value, int) and 1 <= value <= 9
+        self._lists[x][y] = value
+
+    def check(self, pos=None):
+        if pos is None:
             return self._check_whole()
 
     def _check_whole(self):
-
-        def __check(lst):
-            return None in lst or list(sorted(lst)) == range(1, 10)
-
-        for lst in self._lists + zip(*self._lists):
-            if not __check(lst):
-                return False
-
-        for square in self.get_squares():
-            if not __check(square):
-                return False
+        for lsts in (self._lists, itertools.izip(*self._lists), self.get_squares()):
+            for lst in lsts:
+                if None not in lst and list(sorted(lst)) == range(1, 10):
+                    return False
         return True
 
     def get_squares(self):
@@ -49,6 +50,10 @@ class Puzzle(object):
         r = [''.join(map(lambda i: '_' if i is None else str(i), lst))
              for lst in self._lists]
         return '\n'.join(r)
+
+    def clone(self):
+        lsts = copy.deepcopy(self._lists)
+        return Puzzle(lsts)
 
 
 def resolve(puzzle):
