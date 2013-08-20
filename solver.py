@@ -50,6 +50,18 @@ class Puzzle(object):
              for lst in self._lists]
         return '\n'.join(r)
 
-puzzle = Puzzle.create(open('puzzle1'))
-print puzzle
-print puzzle.check()
+
+def resolve(puzzle):
+    return puzzle
+
+
+def main():
+    puzzle = Puzzle.create(open('puzzle1'))
+    print puzzle
+    print puzzle.check()
+    result = resolve(puzzle)
+    print 'result'
+    print result
+
+if __name__ == '__main__':
+    main()
