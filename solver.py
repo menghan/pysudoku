@@ -13,6 +13,7 @@ class Puzzle(object):
     def get_slots(self):
         slots = [(x, y) for x, lst in enumerate(self._lists)
                  for y, e in enumerate(lst) if e is None]
+        slots.sort(key=lambda slot: len(self.get_candidates(slot[0], slot[1])))
         return slots[0]
 
     def get_candidates(self, x, y):
