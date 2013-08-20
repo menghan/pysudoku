@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import heapq
+import collections
 
 
 def profile(f):
@@ -30,25 +31,44 @@ class Puzzle(object):
         self._lists = [[e for e in lst] for lst in lists]
         self.n_slot = sum(lists, []).count(None)
         if candidates is not None:
-            self._candidates = candidates.copy()  # copy on write
+            self._candidates = candidates.copy()
         else:
-            self._candidates = {}
+            self._candidates = collections.defaultdict(int)
 
     def get_slots(self):
         slots = [(x, y) for x, lst in enumerate(self._lists)
                  for y, e in enumerate(lst) if e is None]
-        return heapq.nsmallest(1, slots, key=lambda slot: len(self.get_candidates(*slot)))[0]
+        return heapq.nsmallest(1, slots, key=lambda slot: self.get_candidates_len(*slot))[0]
 
     def get_candidates(self, x, y):
         if (x, y) not in self._candidates:
             self._candidates[(x, y)] = self._calculate_candidates(x, y)
-        return self._candidates[(x, y)]
+        c = self._candidates[(x, y)] & 0b1111111110
+        return self._bit2ints(c)
+
+    def _bit2ints(self, c):
+        return [i for i in xrange(1, 10) if (1 << i) & c]
+
+    def get_candidates_len(self, x, y):
+        if (x, y) not in self._candidates:
+            self._candidates[(x, y)] = self._calculate_candidates(x, y)
+        c = self._candidates[(x, y)] & 0b1111111110
+        r = 0
+        while c:
+            c = c & (c - 1)
+            if c:
+                r += 1
+        return r
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
         assert lists[x][y] is None
         existed = set(lists[x] + list(zip(*lists)[y]) + self.get_square(x, y))
-        return {e for e in xrange(1, 10) if e not in existed}
+        r = 0
+        for e in xrange(1, 10):
+            if e not in existed:
+                r |= 1 << e
+        return r
 
     def calculate_all_candidates(self):
         lists = self._lists
@@ -67,9 +87,7 @@ class Puzzle(object):
                 self.get_square_positions(x, y)
         candidates = self._candidates  # local cache
         for pos in related_poses:
-            if pos in candidates:
-                old = candidates[pos]
-                candidates[pos] = {e for e in old if e != value}  # copy on write
+            candidates[pos] &= ~ (1 << value)
 
     def get_square_positions(self, x, y):
         if (x, y) not in self._square_pos_cache:
