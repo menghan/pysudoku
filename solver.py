@@ -4,6 +4,24 @@
 import heapq
 
 
+def profile(f):
+    def func(*args, **kwargs):
+        import os
+        import hotshot
+        import hotshot.stats
+        path = '/tmp/solve-puzzle-%s.prof' % os.getpid()
+        prof = hotshot.Profile(path)
+        prof.runcall(f, *args, **kwargs)
+        prof.close()
+        stats = hotshot.stats.load(path)
+        stats.strip_dirs()
+        stats.sort_stats('time', 'calls')
+        stats.print_stats(20)
+        stats.sort_stats('cumulative')
+        stats.print_stats(20)
+    return func
+
+
 class Puzzle(object):
 
     _square_pos_cache = {}
@@ -23,13 +41,16 @@ class Puzzle(object):
 
     def get_candidates(self, x, y):
         if (x, y) not in self._candidates:
-            lists = self._lists  # local cache
-            assert lists[x][y] is None
-            existed = set()
-            for e in lists[x] + list(zip(*lists)[y]) + self.get_square(x, y):
-                existed.add(e)
-            self._candidates[(x, y)] = set(range(1, 10)) - existed
+            self._candidates[(x, y)] = self._calculate_candidates(x, y)
         return self._candidates[(x, y)]
+
+    def _calculate_candidates(self, x, y):
+        lists = self._lists  # local cache
+        assert lists[x][y] is None
+        existed = set()
+        for e in lists[x] + list(zip(*lists)[y]) + self.get_square(x, y):
+            existed.add(e)
+        return set(range(1, 10)) - existed
 
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
@@ -39,9 +60,10 @@ class Puzzle(object):
         related_poses = [(x, yy) for yy in xrange(9)] + \
                 [(xx, y) for xx in xrange(9)] + \
                 self.get_square_positions(x, y)
+        candidates = self._candidates  # local cache
         for pos in related_poses:
-            if pos in self._candidates:
-                self._candidates[pos].discard(value)
+            if pos in candidates:
+                candidates[pos].discard(value)
 
     def get_square_positions(self, x, y):
         if (x, y) not in self._square_pos_cache:
@@ -92,8 +114,9 @@ def resolve(puzzle):
                 stack.append(next)
 
 
+@profile
 def main():
-    puzzle = Puzzle.create(open('puzzle4'))
+    puzzle = Puzzle.create(open('puzzle5'))
     print puzzle
     results = resolve(puzzle)
     print 'result'
