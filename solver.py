@@ -15,6 +15,14 @@ class Puzzle(object):
                  for y, e in enumerate(lst) if e is None]
         return slots[0]
 
+    def get_candidates(self, x, y):
+        lists = self._lists  # local cache
+        assert lists[x][y] is None
+        existed = set()
+        for e in lists[x] + list(zip(*lists)[y]) + self.get_square(x, y):
+            existed.add(e)
+        return set(range(1, 10)) - existed
+
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
         if self._lists[x][y] is None:
@@ -48,10 +56,16 @@ class Puzzle(object):
         check_lists = [
             lists[x],
             zip(*lists)[y],
-            [lists[xx][yy] for xx in xrange(square_x_base, square_x_base + 3)
-             for yy in xrange(square_y_base, square_y_base + 3)]
+            self.get_square(x, y),
         ]
         return self._check_lists(check_lists)
+
+    def get_square(self, x, y):
+        lists = self._lists  # local cache
+        square_x_base = x / 3 * 3
+        square_y_base = y / 3 * 3
+        return [lists[xx][yy] for xx in xrange(square_x_base, square_x_base + 3)
+                for yy in xrange(square_y_base, square_y_base + 3)]
 
     def get_squares(self):
         lists = self._lists  # local cache
@@ -85,18 +99,18 @@ def resolve(puzzle):
     while stack:
         current = stack.pop()
         x, y = current.get_slots()
-        for i in xrange(1, 10):
+        candidates = current.get_candidates(x, y)
+        for i in candidates:
             next = current.clone()
             next.set(x, y, i)
-            if next.check((x, y)):
-                if next.n_slot == 0:
-                    return next
-                else:
-                    stack.append(next)
+            if next.n_slot == 0:
+                return next
+            else:
+                stack.append(next)
 
 
 def main():
-    puzzle = Puzzle.create(open('puzzle1'))
+    puzzle = Puzzle.create(open('puzzle4'))
     print puzzle
     print puzzle.check()
     result = resolve(puzzle)
