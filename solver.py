@@ -50,6 +50,13 @@ class Puzzle(object):
         existed = set(lists[x] + list(zip(*lists)[y]) + self.get_square(x, y))
         return {e for e in xrange(1, 10) if e not in existed}
 
+    def calculate_all_candidates(self):
+        lists = self._lists
+        for x in xrange(9):
+            for y in xrange(9):
+                if lists[x][y] is None:
+                    self.get_candidates(x, y)
+
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
         if self._lists[x][y] is None:
@@ -117,6 +124,7 @@ def resolve(puzzle):
 def main():
     puzzle = Puzzle.create(open('puzzle5'))
     print puzzle
+    puzzle.calculate_all_candidates()
     results = resolve(puzzle)
     print 'result'
     for result in results:
