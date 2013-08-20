@@ -11,11 +11,19 @@ class Puzzle(object):
         self._lists = lists
         self.n_slot = sum(lists, []).count(None)
 
+    def get_slots(self):
+        for x, lst in enumerate(self._lists):
+            for y, e in enumerate(lst):
+                if e is None:
+                    yield (x, y)
+
     def get(self, x, y):
         return self._lists[x][y]
 
     def set(self, x, y, value):
-        assert value is None or isinstance(value, int) and 1 <= value <= 9
+        assert isinstance(value, int) and 1 <= value <= 9
+        if self._lists[x][y] is None:
+            self.n_slot -= 1
         self._lists[x][y] = value
 
     def check(self, pos=None):
@@ -25,13 +33,13 @@ class Puzzle(object):
     def _check_whole(self):
         for lsts in (self._lists, itertools.izip(*self._lists), self.get_squares()):
             for lst in lsts:
-                if None not in lst and list(sorted(lst)) == range(1, 10):
+                if len(filter(None, lst)) != len(set(filter(None, lst))):
                     return False
         return True
 
     def get_squares(self):
-        for x0 in xrange(len(self._lists), 3):
-            for y0 in xrange(len(self._lists[0]), 3):
+        for x0 in xrange(0, len(self._lists), 3):
+            for y0 in xrange(0, len(self._lists[0]), 3):
                 yield [self.get(x, y)
                        for x in xrange(x0, x0 + 3) for y in xrange(y0, y0 + 3)]
 
@@ -57,7 +65,21 @@ class Puzzle(object):
 
 
 def resolve(puzzle):
-    return puzzle
+    stack = []
+    stack.append(puzzle)
+    while stack:
+        current = stack.pop()
+        for slot in current.get_slots():
+            x, y = slot
+            for i in xrange(1, 10):
+                next = current.clone()
+                next.set(x, y, i)
+                if next.check():
+                    if next.n_slot == 0:
+                        return next
+                    else:
+                        stack.append(next)
+            break
 
 
 def main():
