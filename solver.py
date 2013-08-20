@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import itertools
-
 
 class Puzzle(object):
 
@@ -29,37 +27,6 @@ class Puzzle(object):
         if self._lists[x][y] is None:
             self.n_slot -= 1
         self._lists[x][y] = value
-
-    def check(self, pos=None):
-        if pos is None:
-            return self._check_whole()
-        else:
-            return self._check_by_pos(pos)
-
-    def _check_lists(self, lists):
-        for lst in lists:
-            if len(filter(None, lst)) != len(set(filter(None, lst))):
-                return False
-        return True
-
-    def _check_whole(self):
-        return self._check_lists(itertools.chain(
-            self._lists,
-            itertools.izip(*self._lists),
-            self.get_squares(),
-        ))
-
-    def _check_by_pos(self, pos):
-        x, y = pos
-        lists = self._lists  # local cache
-        square_x_base = x / 3 * 3
-        square_y_base = y / 3 * 3
-        check_lists = [
-            lists[x],
-            zip(*lists)[y],
-            self.get_square(x, y),
-        ]
-        return self._check_lists(check_lists)
 
     def get_square(self, x, y):
         lists = self._lists  # local cache
@@ -113,7 +80,6 @@ def resolve(puzzle):
 def main():
     puzzle = Puzzle.create(open('puzzle4'))
     print puzzle
-    print puzzle.check()
     result = resolve(puzzle)
     print 'result'
     print result
