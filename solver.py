@@ -4,6 +4,8 @@
 
 class Puzzle(object):
 
+    _square_pos_cache = {}
+
     def __init__(self, lists):
         self._lists = [[e for e in lst] for lst in lists]
         self.n_slot = sum(lists, []).count(None)
@@ -28,18 +30,18 @@ class Puzzle(object):
             self.n_slot -= 1
         self._lists[x][y] = value
 
+    def get_square_positions(self, x, y):
+        if (x, y) not in self._square_pos_cache:
+            square_x_base = x / 3 * 3
+            square_y_base = y / 3 * 3
+            self._square_pos_cache[(x, y)] = \
+                    [(xx, yy) for xx in xrange(square_x_base, square_x_base + 3)
+                     for yy in xrange(square_y_base, square_y_base + 3)]
+        return self._square_pos_cache[(x, y)]
+
     def get_square(self, x, y):
         lists = self._lists  # local cache
-        square_x_base = x / 3 * 3
-        square_y_base = y / 3 * 3
-        return [lists[xx][yy] for xx in xrange(square_x_base, square_x_base + 3)
-                for yy in xrange(square_y_base, square_y_base + 3)]
-
-    def get_squares(self):
-        lists = self._lists  # local cache
-        for x0 in xrange(0, len(lists), 3):
-            for y0 in xrange(0, len(lists[0]), 3):
-                yield [lists[x][y] for x in xrange(x0, x0 + 3) for y in xrange(y0, y0 + 3)]
+        return [lists[xx][yy] for xx, yy in self.get_square_positions(x, y)]
 
     @classmethod
     def create(cls, iterable):
