@@ -30,7 +30,7 @@ class Puzzle(object):
         self._lists = [[e for e in lst] for lst in lists]
         self.n_slot = sum(lists, []).count(None)
         if candidates is not None:
-            self._candidates = {k: v.copy() for k, v in candidates.items()}
+            self._candidates = candidates.copy()  # copy on write
         else:
             self._candidates = {}
 
@@ -47,10 +47,8 @@ class Puzzle(object):
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
         assert lists[x][y] is None
-        existed = set()
-        for e in lists[x] + list(zip(*lists)[y]) + self.get_square(x, y):
-            existed.add(e)
-        return set(range(1, 10)) - existed
+        existed = set(lists[x] + list(zip(*lists)[y]) + self.get_square(x, y))
+        return {e for e in xrange(1, 10) if e not in existed}
 
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
@@ -63,7 +61,8 @@ class Puzzle(object):
         candidates = self._candidates  # local cache
         for pos in related_poses:
             if pos in candidates:
-                candidates[pos].discard(value)
+                old = candidates[pos]
+                candidates[pos] = {e for e in old if e != value}  # copy on write
 
     def get_square_positions(self, x, y):
         if (x, y) not in self._square_pos_cache:
