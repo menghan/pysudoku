@@ -17,9 +17,6 @@ class Puzzle(object):
                 if e is None:
                     yield (x, y)
 
-    def get(self, x, y):
-        return self._lists[x][y]
-
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
         if self._lists[x][y] is None:
@@ -29,19 +26,40 @@ class Puzzle(object):
     def check(self, pos=None):
         if pos is None:
             return self._check_whole()
+        else:
+            return self._check_by_pos(pos)
 
-    def _check_whole(self):
-        for lsts in (self._lists, itertools.izip(*self._lists), self.get_squares()):
-            for lst in lsts:
-                if len(filter(None, lst)) != len(set(filter(None, lst))):
-                    return False
+    def _check_lists(self, lists):
+        for lst in lists:
+            if len(filter(None, lst)) != len(set(filter(None, lst))):
+                return False
         return True
 
+    def _check_whole(self):
+        return self._check_lists(itertools.chain(
+            self._lists,
+            itertools.izip(*self._lists),
+            self.get_squares(),
+        ))
+
+    def _check_by_pos(self, pos):
+        x, y = pos
+        lists = self._lists  # local cache
+        square_x_base = x / 3 * 3
+        square_y_base = y / 3 * 3
+        check_lists = [
+            lists[x],
+            zip(*lists)[y],
+            [lists[xx][yy] for xx in xrange(square_x_base, square_x_base + 3)
+             for yy in xrange(square_y_base, square_y_base + 3)]
+        ]
+        return self._check_lists(check_lists)
+
     def get_squares(self):
-        for x0 in xrange(0, len(self._lists), 3):
-            for y0 in xrange(0, len(self._lists[0]), 3):
-                yield [self.get(x, y)
-                       for x in xrange(x0, x0 + 3) for y in xrange(y0, y0 + 3)]
+        lists = self._lists  # local cache
+        for x0 in xrange(0, len(lists), 3):
+            for y0 in xrange(0, len(lists[0]), 3):
+                yield [lists[x][y] for x in xrange(x0, x0 + 3) for y in xrange(y0, y0 + 3)]
 
     @classmethod
     def create(cls, iterable):
@@ -74,7 +92,7 @@ def resolve(puzzle):
             for i in xrange(1, 10):
                 next = current.clone()
                 next.set(x, y, i)
-                if next.check():
+                if next.check((x, y)):
                     if next.n_slot == 0:
                         return next
                     else:
