@@ -87,7 +87,7 @@ def resolve(puzzle):
             next = current.clone()
             next.set(x, y, i)
             if next.n_slot == 0:
-                return next
+                yield next
             else:
                 stack.append(next)
 
@@ -95,9 +95,11 @@ def resolve(puzzle):
 def main():
     puzzle = Puzzle.create(open('puzzle4'))
     print puzzle
-    result = resolve(puzzle)
+    results = resolve(puzzle)
     print 'result'
-    print result
+    for result in results:
+        print result
+        print
 
 if __name__ == '__main__':
     main()
