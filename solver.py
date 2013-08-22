@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import heapq
 import collections
 
 
@@ -36,9 +35,16 @@ class Puzzle(object):
             self._candidates = collections.defaultdict(int)
 
     def get_slots(self):
-        slots = [(x, y) for x, lst in enumerate(self._lists)
-                 for y, e in enumerate(lst) if e is None]
-        return heapq.nsmallest(1, slots, key=lambda slot: self.get_candidates_len(*slot))[0]
+        min_cdd = 10  # 9 is the largest possible value
+        for x, lst in enumerate(self._lists):
+            for y, e in enumerate(lst):
+                if e is None:
+                    cdd = self.get_candidates_len(x, y)
+                    if cdd < min_cdd:
+                        rx, ry, min_cdd = x, y, cdd
+                    # if min_cdd == 1:
+                    #     return rx, ry
+        return rx, ry
 
     def get_candidates(self, x, y):
         if (x, y) not in self._candidates:
