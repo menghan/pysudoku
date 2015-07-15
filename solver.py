@@ -69,8 +69,6 @@ class Puzzle(object):
                     cdd = self._bitcounts[self._candidates[(x, y)]]
                     if cdd < min_cdd:
                         rx, ry, min_cdd = x, y, cdd
-                        if min_cdd == 0:
-                            return rx, ry
         return rx, ry
 
     def get_candidates(self, x, y):
