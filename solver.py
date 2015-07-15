@@ -61,10 +61,11 @@ class Puzzle(object):
                     self._candidates[(x, y)] = self._calculate_candidates(x, y)
 
     def get_slots(self):
+        lists = self._lists  # local cache
         min_cdd = 10  # 9 is the largest possible value
         for x in xrange(9):
             for y in xrange(9):
-                if self._lists[x][y] is None:
+                if lists[x][y] is None:
                     cdd = self._bitcounts[self._candidates[(x, y)]]
                     if cdd < min_cdd:
                         rx, ry, min_cdd = x, y, cdd
@@ -84,9 +85,10 @@ class Puzzle(object):
 
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
-        if self._lists[x][y] is None:
+        lists = self._lists  # local cache
+        if lists[x][y] is None:
             self.n_slot -= 1
-        self._lists[x][y] = value
+        lists[x][y] = value
         related_poses = [(x, yy) for yy in xrange(9)] + \
                 [(xx, y) for xx in xrange(9)] + \
                 self._square_pos_cache[(x, y)]
