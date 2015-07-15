@@ -3,7 +3,6 @@
 
 import collections
 
-
 def profile(f):
     def func(*args, **kwargs):
         import os
@@ -49,7 +48,7 @@ class Puzzle(object):
     _bitcounts = [get_bit_count(i) for i in xrange(0b1111111110 + 1)]
 
     def __init__(self, lists, n_slot=None, candidates=None):
-        self._lists = [[e for e in lst] for lst in lists]
+        self._lists = [lst[:] for lst in lists]
         self.n_slot = n_slot if n_slot is not None else sum(lists, []).count(None)
         if candidates is not None:
             self._candidates = candidates.copy()
@@ -68,6 +67,8 @@ class Puzzle(object):
                     cdd = self._bitcounts[self._candidates[(x, y)]]
                     if cdd < min_cdd:
                         rx, ry, min_cdd = x, y, cdd
+                        if min_cdd == 1:
+                            return rx, ry
         return rx, ry
 
     def get_candidates(self, x, y):
@@ -92,12 +93,11 @@ class Puzzle(object):
                 [(xx, y) for xx in xrange(9)] + \
                 self._square_pos_cache[(x, y)]
         candidates = self._candidates  # local cache
-        for pos in related_poses:
-            x, y = pos
+        for x, y in related_poses:
             if lists[x][y] is not None:
                 continue
-            candidates[pos] &= ~ (1 << value)
-            if candidates[pos] == 0:
+            candidates[(x, y)] &= ~ (1 << value)
+            if candidates[(x, y)] == 0:
                 return False
         return True
 
