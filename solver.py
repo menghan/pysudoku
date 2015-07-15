@@ -11,7 +11,7 @@ def profile(f):
         import hotshot.stats
         path = '/tmp/solve-puzzle-%s.prof' % os.getpid()
         prof = hotshot.Profile(path)
-        prof.runcall(f, *args, **kwargs)
+        rv = prof.runcall(f, *args, **kwargs)
         prof.close()
         stats = hotshot.stats.load(path)
         stats.strip_dirs()
@@ -19,16 +19,35 @@ def profile(f):
         stats.print_stats(20)
         stats.sort_stats('cumulative')
         stats.print_stats(20)
+        return rv
     return func
+
+
+def get_bit_count(v):
+    r = 0
+    while v:
+        v = v & (v - 1)
+        if v:
+            r += 1
+    return r
+
+
+bitcounts = [get_bit_count(i) for i in xrange(0b1111111110)]
+square_base = [0, 0, 0, 3, 3, 3, 6, 6, 6]
 
 
 class Puzzle(object):
 
-    _square_pos_cache = {}
+    __slots__ = ('_lists', 'n_slot', '_candidates')
+    _square_pos_cache = {
+        (a, b): [(x, y) for x in xrange(square_base[a], square_base[a] + 3) for y in xrange(square_base[b], square_base[b] + 3)]
+        for a in xrange(9)
+        for b in xrange(9)
+    }
 
-    def __init__(self, lists, candidates=None):
+    def __init__(self, lists, n_slot=None, candidates=None):
         self._lists = [[e for e in lst] for lst in lists]
-        self.n_slot = sum(lists, []).count(None)
+        self.n_slot = n_slot if n_slot is not None else sum(lists, []).count(None)
         if candidates is not None:
             self._candidates = candidates.copy()
         else:
@@ -42,8 +61,6 @@ class Puzzle(object):
                     cdd = self.get_candidates_len(x, y)
                     if cdd < min_cdd:
                         rx, ry, min_cdd = x, y, cdd
-                    # if min_cdd == 1:
-                    #     return rx, ry
         return rx, ry
 
     def get_candidates(self, x, y):
@@ -59,12 +76,7 @@ class Puzzle(object):
         if (x, y) not in self._candidates:
             self._candidates[(x, y)] = self._calculate_candidates(x, y)
         c = self._candidates[(x, y)] & 0b1111111110
-        r = 0
-        while c:
-            c = c & (c - 1)
-            if c:
-                r += 1
-        return r
+        return bitcounts[c]
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
@@ -90,23 +102,14 @@ class Puzzle(object):
         self._lists[x][y] = value
         related_poses = [(x, yy) for yy in xrange(9)] + \
                 [(xx, y) for xx in xrange(9)] + \
-                self.get_square_positions(x, y)
+                self._square_pos_cache[(x, y)]
         candidates = self._candidates  # local cache
         for pos in related_poses:
             candidates[pos] &= ~ (1 << value)
 
-    def get_square_positions(self, x, y):
-        if (x, y) not in self._square_pos_cache:
-            square_x_base = x / 3 * 3
-            square_y_base = y / 3 * 3
-            self._square_pos_cache[(x, y)] = \
-                    [(xx, yy) for xx in xrange(square_x_base, square_x_base + 3)
-                     for yy in xrange(square_y_base, square_y_base + 3)]
-        return self._square_pos_cache[(x, y)]
-
     def get_square(self, x, y):
         lists = self._lists  # local cache
-        return [lists[xx][yy] for xx, yy in self.get_square_positions(x, y)]
+        return [lists[xx][yy] for xx, yy in self._square_pos_cache[(x, y)]]
 
     @classmethod
     def create(cls, iterable):
@@ -125,10 +128,12 @@ class Puzzle(object):
         return '\n'.join(r)
 
     def clone(self):
-        return Puzzle(self._lists, self._candidates)
+        return Puzzle(self._lists, self.n_slot, self._candidates)
 
 
+@profile
 def resolve(puzzle):
+    results = []
     stack = []
     stack.append(puzzle)
     while stack:
@@ -139,12 +144,12 @@ def resolve(puzzle):
             next = current.clone()
             next.set(x, y, i)
             if next.n_slot == 0:
-                yield next
+                results.append(next)
             else:
                 stack.append(next)
+    return results
 
 
-@profile
 def main():
     puzzle = Puzzle.create(open('puzzle5'))
     print puzzle
