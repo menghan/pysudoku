@@ -26,9 +26,9 @@ def profile(f):
 def get_bit_count(v):
     r = 0
     while v:
-        v = v & (v - 1)
-        if v:
+        if v & 1 == 1:
             r += 1
+        v >>= 1
     return r
 
 
@@ -69,6 +69,8 @@ class Puzzle(object):
                     cdd = self._bitcounts[self._candidates[(x, y)]]
                     if cdd < min_cdd:
                         rx, ry, min_cdd = x, y, cdd
+                        if min_cdd == 0:
+                            return rx, ry
         return rx, ry
 
     def get_candidates(self, x, y):
