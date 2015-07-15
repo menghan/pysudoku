@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import collections
+import multiprocessing
 
 def profile(f):
     def func(*args, **kwargs):
@@ -131,7 +132,6 @@ class Puzzle(object):
         return Puzzle(self._lists, self.n_slot, self._candidates)
 
 
-@profile
 def resolve(puzzle):
     results = []
     stack = []
@@ -149,6 +149,10 @@ def resolve(puzzle):
 def main():
     puzzle = Puzzle.create(open('puzzle5'))
     print puzzle
+    # nexts = list(puzzle.next())
+    # pool = multiprocessing.Pool(2)
+    # results = sum(pool.map(resolve, nexts), [])
+    # results = profile(resolve)(puzzle)
     results = resolve(puzzle)
     print 'result'
     for result in results:
