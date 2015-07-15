@@ -32,7 +32,6 @@ def get_bit_count(v):
     return r
 
 
-bitcounts = [get_bit_count(i) for i in xrange(0b1111111110)]
 square_base = [0, 0, 0, 3, 3, 3, 6, 6, 6]
 
 
@@ -44,6 +43,11 @@ class Puzzle(object):
         for a in xrange(9)
         for b in xrange(9)
     }
+    _bit2ints = [
+        [i for i in xrange(1, 10) if (1 << i) & c]
+        for c in xrange(0b1111111110 + 1)
+    ]
+    _bitcounts = [get_bit_count(i) for i in xrange(0b1111111110 + 1)]
 
     def __init__(self, lists, n_slot=None, candidates=None):
         self._lists = [[e for e in lst] for lst in lists]
@@ -52,48 +56,31 @@ class Puzzle(object):
             self._candidates = candidates.copy()
         else:
             self._candidates = collections.defaultdict(int)
+            for x in xrange(9):
+                for y in xrange(9):
+                    self._candidates[(x, y)] = self._calculate_candidates(x, y)
 
     def get_slots(self):
         min_cdd = 10  # 9 is the largest possible value
-        for x, lst in enumerate(self._lists):
-            for y, e in enumerate(lst):
-                if e is None:
-                    cdd = self.get_candidates_len(x, y)
+        for x in xrange(9):
+            for y in xrange(9):
+                if self._lists[x][y] is None:
+                    cdd = self._bitcounts[self._candidates[(x, y)]]
                     if cdd < min_cdd:
                         rx, ry, min_cdd = x, y, cdd
         return rx, ry
 
     def get_candidates(self, x, y):
-        if (x, y) not in self._candidates:
-            self._candidates[(x, y)] = self._calculate_candidates(x, y)
-        c = self._candidates[(x, y)] & 0b1111111110
-        return self._bit2ints(c)
-
-    def _bit2ints(self, c):
-        return [i for i in xrange(1, 10) if (1 << i) & c]
-
-    def get_candidates_len(self, x, y):
-        if (x, y) not in self._candidates:
-            self._candidates[(x, y)] = self._calculate_candidates(x, y)
-        c = self._candidates[(x, y)] & 0b1111111110
-        return bitcounts[c]
+        return self._bit2ints[self._candidates[(x, y)]]
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
-        assert lists[x][y] is None
         existed = set(lists[x] + list(zip(*lists)[y]) + self.get_square(x, y))
         r = 0
         for e in xrange(1, 10):
             if e not in existed:
                 r |= 1 << e
         return r
-
-    def calculate_all_candidates(self):
-        lists = self._lists
-        for x in xrange(9):
-            for y in xrange(9):
-                if lists[x][y] is None:
-                    self.get_candidates(x, y)
 
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
@@ -153,7 +140,6 @@ def resolve(puzzle):
 def main():
     puzzle = Puzzle.create(open('puzzle5'))
     print puzzle
-    puzzle.calculate_all_candidates()
     results = resolve(puzzle)
     print 'result'
     for result in results:
