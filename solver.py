@@ -96,7 +96,13 @@ class Puzzle(object):
                 self._square_pos_cache[(x, y)]
         candidates = self._candidates  # local cache
         for pos in related_poses:
+            x, y = pos
+            if lists[x][y] is not None:
+                continue
             candidates[pos] &= ~ (1 << value)
+            if candidates[pos] == 0:
+                return False
+        return True
 
     def get_square(self, x, y):
         lists = self._lists  # local cache
@@ -131,9 +137,10 @@ def resolve(puzzle):
         current = stack.pop()
         x, y = current.get_slots()
         candidates = current.get_candidates(x, y)
-        for i in list(candidates):
+        for i in candidates:
             next = current.clone()
-            next.set(x, y, i)
+            if not next.set(x, y, i):
+                continue
             if next.n_slot == 0:
                 results.append(next)
             else:
