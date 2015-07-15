@@ -37,7 +37,6 @@ square_base = [0, 0, 0, 3, 3, 3, 6, 6, 6]
 
 class Puzzle(object):
 
-    __slots__ = ('_lists', 'n_slot', '_candidates')
     _square_pos_cache = {
         (a, b): [(x, y) for x in xrange(square_base[a], square_base[a] + 3) for y in xrange(square_base[b], square_base[b] + 3)]
         for a in xrange(9)
@@ -86,9 +85,9 @@ class Puzzle(object):
     def set(self, x, y, value):
         assert isinstance(value, int) and 1 <= value <= 9
         lists = self._lists  # local cache
-        if lists[x][y] is None:
-            self.n_slot -= 1
+        assert lists[x][y] is None
         lists[x][y] = value
+        self.n_slot -= 1
         related_poses = [(x, yy) for yy in xrange(9)] + \
                 [(xx, y) for xx in xrange(9)] + \
                 self._square_pos_cache[(x, y)]
