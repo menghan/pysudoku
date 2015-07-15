@@ -58,21 +58,27 @@ class Puzzle(object):
                 for y in xrange(9):
                     self._candidates[(x, y)] = self._calculate_candidates(x, y)
 
-    def get_slots(self):
+    def next(self):
         lists = self._lists  # local cache
         min_cdd = 10  # 9 is the largest possible value
+        break_it = False
         for x in xrange(9):
             for y in xrange(9):
-                if lists[x][y] is None:
-                    cdd = self._bitcounts[self._candidates[(x, y)]]
-                    if cdd < min_cdd:
-                        rx, ry, min_cdd = x, y, cdd
-                        if min_cdd == 1:
-                            return rx, ry
-        return rx, ry
-
-    def get_candidates(self, x, y):
-        return self._bit2ints[self._candidates[(x, y)]]
+                if lists[x][y] is not None:
+                    continue
+                cdd = self._bitcounts[self._candidates[(x, y)]]
+                if cdd >= min_cdd:
+                    continue
+                mx, my, min_cdd = x, y, cdd
+                if cdd == 1:
+                    break_it = True
+                    break
+            if break_it:
+                break
+        for c in self._bit2ints[self._candidates[(mx, my)]]:
+            next = self.clone()
+            if next.set(mx, my, c):
+                yield next
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
@@ -132,12 +138,7 @@ def resolve(puzzle):
     stack.append(puzzle)
     while stack:
         current = stack.pop()
-        x, y = current.get_slots()
-        candidates = current.get_candidates(x, y)
-        for i in candidates:
-            next = current.clone()
-            if not next.set(x, y, i):
-                continue
+        for next in current.next():
             if next.n_slot == 0:
                 results.append(next)
             else:
