@@ -60,12 +60,11 @@ class Puzzle(object):
                     self._candidates[(x, y)] = self._calculate_candidates(x, y)
 
     def next(self):
-        lists = self._lists  # local cache
         min_cdd = 10  # 9 is the largest possible value
         break_it = False
         for x in xrange(9):
             for y in xrange(9):
-                if lists[x][y] is not None:
+                if self._lists[x][y] is not None:
                     continue
                 cdd = self._bitcounts[self._candidates[(x, y)]]
                 if cdd >= min_cdd:
@@ -76,20 +75,18 @@ class Puzzle(object):
                     break
             if break_it:
                 break
+        related_poses = set(sum(
+            [[(mx, yy) for yy in xrange(9)],
+             [(xx, my) for xx in xrange(9)],
+             self._square_pos_cache[(mx, my)]],
+            [],
+        ))
+        related_poses.discard((mx, my))
         for value in self._bit2ints[self._candidates[(mx, my)]]:
-            lists = [lst[:] for lst in self._lists]
-            lists[mx][my] = value
-            n_slot = self.n_slot - 1
             candidates = self._candidates.copy()
-            related_poses = sum(
-                [[(mx, yy) for yy in xrange(9)],
-                 [(xx, my) for xx in xrange(9)],
-                 self._square_pos_cache[(mx, my)]],
-                [],
-            )
             invalid = False
             for x, y in related_poses:
-                if lists[x][y] is not None:
+                if self._lists[x][y] is not None:
                     continue
                 candidates[(x, y)] &= ~ (1 << value)
                 if candidates[(x, y)] == 0:
@@ -97,7 +94,10 @@ class Puzzle(object):
                     break
             if invalid:
                 continue
-            yield Puzzle(lists, n_slot, candidates)
+            new_lists = [lst[:] for lst in self._lists]
+            new_lists[mx][my] = value
+            n_slot = self.n_slot - 1
+            yield Puzzle(new_lists, n_slot, candidates)
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
