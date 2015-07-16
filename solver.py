@@ -131,9 +131,6 @@ class Puzzle(object):
              for lst in self._lists]
         return '\n'.join(r)
 
-    def clone(self):
-        return Puzzle(self._lists, self.n_slot, self._candidates)
-
 
 def resolve(puzzle):
     results = []
