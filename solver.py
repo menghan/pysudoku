@@ -49,10 +49,10 @@ class Puzzle(object):
     _bitcounts = [get_bit_count(i) for i in xrange(0b1111111110 + 1)]
 
     def __init__(self, lists, n_slot=None, candidates=None):
-        self._lists = [lst[:] for lst in lists]
+        self._lists = lists
         self.n_slot = n_slot if n_slot is not None else sum(lists, []).count(None)
         if candidates is not None:
-            self._candidates = candidates.copy()
+            self._candidates = candidates
         else:
             self._candidates = collections.defaultdict(int)
             for x in xrange(9):
@@ -77,14 +77,16 @@ class Puzzle(object):
             if break_it:
                 break
         for value in self._bit2ints[self._candidates[(mx, my)]]:
-            next = self.clone()
-            lists = next._lists  # local cache
+            lists = [lst[:] for lst in self._lists]
             lists[mx][my] = value
-            next.n_slot -= 1
-            related_poses = [(mx, yy) for yy in xrange(9)] + \
-                    [(xx, my) for xx in xrange(9)] + \
-                    next._square_pos_cache[(mx, my)]
-            candidates = next._candidates  # local cache
+            n_slot = self.n_slot - 1
+            candidates = self._candidates.copy()
+            related_poses = sum(
+                [[(mx, yy) for yy in xrange(9)],
+                 [(xx, my) for xx in xrange(9)],
+                 self._square_pos_cache[(mx, my)]],
+                [],
+            )
             invalid = False
             for x, y in related_poses:
                 if lists[x][y] is not None:
@@ -95,7 +97,7 @@ class Puzzle(object):
                     break
             if invalid:
                 continue
-            yield next
+            yield Puzzle(lists, n_slot, candidates)
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
