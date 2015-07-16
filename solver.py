@@ -4,7 +4,7 @@
 import collections
 import multiprocessing
 
-def profile(f):
+def hotspot_profile(f):
     def func(*args, **kwargs):
         import os
         import hotshot
@@ -152,7 +152,7 @@ def main():
     # nexts = list(puzzle.next())
     # pool = multiprocessing.Pool(2)
     # results = sum(pool.map(resolve, nexts), [])
-    # results = profile(resolve)(puzzle)
+    # results = hotspot_profile(resolve)(puzzle)
     results = resolve(puzzle)
     print 'result'
     for result in results:
