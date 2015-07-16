@@ -76,10 +76,26 @@ class Puzzle(object):
                     break
             if break_it:
                 break
-        for c in self._bit2ints[self._candidates[(mx, my)]]:
+        for value in self._bit2ints[self._candidates[(mx, my)]]:
             next = self.clone()
-            if next.set(mx, my, c):
-                yield next
+            lists = next._lists  # local cache
+            lists[mx][my] = value
+            next.n_slot -= 1
+            related_poses = [(mx, yy) for yy in xrange(9)] + \
+                    [(xx, my) for xx in xrange(9)] + \
+                    next._square_pos_cache[(mx, my)]
+            candidates = next._candidates  # local cache
+            invalid = False
+            for x, y in related_poses:
+                if lists[x][y] is not None:
+                    continue
+                candidates[(x, y)] &= ~ (1 << value)
+                if candidates[(x, y)] == 0:
+                    invalid = True
+                    break
+            if invalid:
+                continue
+            yield next
 
     def _calculate_candidates(self, x, y):
         lists = self._lists  # local cache
@@ -89,24 +105,6 @@ class Puzzle(object):
             if e not in existed:
                 r |= 1 << e
         return r
-
-    def set(self, x, y, value):
-        assert isinstance(value, int) and 1 <= value <= 9
-        lists = self._lists  # local cache
-        assert lists[x][y] is None
-        lists[x][y] = value
-        self.n_slot -= 1
-        related_poses = [(x, yy) for yy in xrange(9)] + \
-                [(xx, y) for xx in xrange(9)] + \
-                self._square_pos_cache[(x, y)]
-        candidates = self._candidates  # local cache
-        for x, y in related_poses:
-            if lists[x][y] is not None:
-                continue
-            candidates[(x, y)] &= ~ (1 << value)
-            if candidates[(x, y)] == 0:
-                return False
-        return True
 
     def get_square(self, x, y):
         lists = self._lists  # local cache
